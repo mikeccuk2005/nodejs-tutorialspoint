@@ -8,7 +8,9 @@
 
 const express = require('express');
 const app = express();
-
+// APP ENVIRONMENT
+const envparser = require('../envparser')
+const APP_ENV = envparser.parseENV(process.env)
 
 app.use(express.static('public'));
 
@@ -17,7 +19,7 @@ app.get('/', function (req, res) {
 })
 
 
-const server = app.listen(8081, function () {
+const server = app.listen(APP_ENV.PORT, function () {
    const host = server.address().address
    const port = server.address().port
 

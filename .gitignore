@@ -1,3 +1,8 @@
+## build files
+public/*.html
+
+
+
 # Logs
 logs
 *.log
