@@ -9,7 +9,7 @@ const APP_ENV = envparser.parseENV(process.env)
 //npm install cookie-parser --save
 //npm install multer --save
 var express = require('express');
-var fs = require("fs");
+const _fs = require("fs");
 // var upload = multer({ dest: 'uploads/' })
 const middlewares = require('./middlewares')
 const health = require('./health')
@@ -46,8 +46,8 @@ const appInclueAllPaths = (_app) => {
       console.log(req.file);
       var file = __dirname + "/" + req.file.originalname;
 
-      fs.readFile(req.file.path, function (err, data) {
-         fs.writeFile(file, data, function (err) {
+      _fs.readFile(req.file.path, function (err, data) {
+         _fs.writeFile(file, data, function (err) {
             if (err) {
                console.log(err);
             } else {
@@ -79,8 +79,8 @@ const server = app.listen(APP_ENV.PORT, async () => {
    // TODO add some other initialization here, can be middlewares or handlers, buisness logics, database connections
    
    // replace ENV in html
-   utils.replaceEnvInTmpl(__dirname + "/public/" + "index.html.tmpl", APP_ENV);
-   utils.replaceEnvInTmpl(__dirname + "/public/" + "uploadfile.html.tmpl", APP_ENV);
+   utils.replaceEnvInTmpl(__dirname + "/public/" + "index.html.tmpl", APP_ENV, _fs);
+   utils.replaceEnvInTmpl(__dirname + "/public/" + "uploadfile.html.tmpl", APP_ENV, _fs);
 
 
    // test delayed initialization

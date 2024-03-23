@@ -1,9 +1,8 @@
 exports.delay = (time) => new Promise(resolve => setTimeout(resolve, time));
-const fs = require("fs");
 
-exports.replaceEnvInTmpl = (filepath, envs) =>
+exports.replaceEnvInTmpl = (filepath, envs, _fs) =>
     new Promise(resolve => {
-        fs.readFile(filepath, 'utf8', function (err, data) {
+        _fs.readFile(filepath, 'utf8', function (err, data) {
             if (err) {
                 return console.log(err);
             }
@@ -12,7 +11,7 @@ exports.replaceEnvInTmpl = (filepath, envs) =>
                 result = result.replace("{{" + env_key + "}}", envs[env_key]);
             };
 
-            fs.writeFile(filepath.replace(".tmpl", ""), result, 'utf8', function (err) {
+            _fs.writeFile(filepath.replace(".tmpl", ""), result, 'utf8', function (err) {
                 if (err) return console.log(err);
                 resolve()
             });
