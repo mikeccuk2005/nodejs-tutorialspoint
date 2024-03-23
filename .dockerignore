@@ -1,2 +1,14 @@
 .node_modules
+node_modules
 package-lock.json
+README.md
+Dockerfile
+docker-compose.yml
+uploads
+dist
+others
+tmp
+
+.dockerignore
+.git
+.gitignore
