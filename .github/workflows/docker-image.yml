@@ -1,0 +1,85 @@
+name: Docker Image CI
+
+env:
+  AWS_REGION: ap-southeast-1
+on:
+  push:
+    branches: ["master"]
+    tags:
+      - v.*
+  pull_request:
+    branches: ["master"]
+
+jobs:
+  build-master-hash:
+    runs-on: ubuntu-latest
+    environment: all
+    if: github.ref == 'refs/heads/master'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build, tag, and push image to Amazon ECR
+        id: build-image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: nodejs-tutorialspoint
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          # Build a docker container and
+          # push it to ECR so that it can
+          # be deployed to ECS/EKS.
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG --compress .
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
+
+  tag-version:
+    runs-on: ubuntu-latest
+    environment: all
+    if: startsWith(github.ref, 'refs/tags/v')
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Retag image to Amazon ECR
+        id: build-image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: nodejs-tutorialspoint
+          IMAGE_TAG_HASH: ${{ github.sha }}
+          IMAGE_TAG: ${{ github.ref_name }}
+        run: |
+          # Pull docker container and
+          # retag + push it to ECR so that it can
+          # be deployed to ECS/EKS Production.
+          # docker pull $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG_HASH
+          # docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG_HASH $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          # docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          # echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
+          MANIFEST=$(aws ecr batch-get-image --repository-name $ECR_REGISTRY --image-ids imageTag=$IMAGE_TAG_HASH --output text --query 'images[].imageManifest')
+          echo "MANIFEST=$MANIFEST"
+          aws ecr put-image --repository-name $ECR_REGISTRY --image-tag $IMAGE_TAG --image-manifest "$MANIFEST"
+          aws ecr describe-images --repository-name $ECR_REGISTRY --image-ids imageTag=$IMAGE_TAG
+
+
+
+
